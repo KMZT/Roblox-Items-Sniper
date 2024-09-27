@@ -14,7 +14,7 @@ session = requests.session()
 session.cookies['.ROBLOSECURITY'] = settings["cookie"]
 
 token = None
-payload = [{ "itemType": "Asset", "id": id } for id in item_ids]
+payload = [{ "itemType": "game-pass", "id": id } for id in item_ids]
 cache = []
 
 logs = []
