@@ -43,7 +43,7 @@ def _set_auth():
 
 def get_product_id(id):
     try:
-        conn = session.get(f"https://economy.roblox.com/v2/assets/{id}/details", verify=False)
+        conn = session.get(f"https://economy.roblox.com/v2/assets/{id}/details")
         data = conn.json()
 
         if conn.status_code == 200:
@@ -89,7 +89,7 @@ def watcher():
                 "cache-control": "no-cache",
                 "pragma": "no-cache",
             }
-            conn = session.post("https://catalog.roblox.com/v1/catalog/items/details", json={ "items": payload }, headers=headers, verify=False)
+            conn = session.post("https://catalog.roblox.com/v1/catalog/items/details", json={ "items": payload }, headers=headers)
 
             data = conn.json()
             if conn.status_code == 200:
