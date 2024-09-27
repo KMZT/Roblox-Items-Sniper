@@ -72,11 +72,8 @@ def buy_item(product_id, seller_id, price):
         conn = session.post(f"https://economy.roblox.com/v1/purchases/products/{product_id}", headers=headers, json=body)
         data = conn.json()
         if conn.status_code == 200:
-            if ("purchased" in data) and data["purchased"] == True:
-                purchase_time = time.strftime('%H:%M', time.localtime())
-                logs.append(f"✅ Bought:[{product_id}] {item['name']} : [💸{price} Robux] at {purchase_time}")
-                if product_id in item_warnings:
-                    del item_warnings[product_id]
+            print("Bought")
+             
         # Purchase happens only once, so no retry logic is needed
     except:
         pass  # Ignore errors, do not retry buying
