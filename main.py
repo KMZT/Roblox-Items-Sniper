@@ -2,29 +2,22 @@ import requests
 import json
 import time
 import threading
-import random
-import os
-from urllib3.exceptions import InsecureRequestWarning
-from colorama import Fore, Back, Style, init
-
-init()
 
 # Load configuration settings from settings.json
 settings = json.load(open("settings.json", "r"))
 item_ids = settings["items"]  # Extract item IDs and prices
-cookies = settings["cookies"]  # Change to cookies as a list
-requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+cookies = settings["cookies"]  # List of cookies
+watch_speed = settings["watch_speed"]
 
+# Initialize session and cookie index
 session = requests.session()
-cookie_index = 0  # Initialize the cookie index
+cookie_index = 0  # Start with the first cookie
+
 token = None
-payload = [{"itemType": "Asset", "id": id} for id in item_ids]
+payload = [{ "itemType": "Asset", "id": id } for id in item_ids]
 cache = []
 
-logs = []
 checks = 0
-
-start_time = time.time()
 
 # Create a dictionary to track items that have been warned and bought
 item_warnings = {}
@@ -35,15 +28,16 @@ def refresh_tokens():
         time.sleep(150)
 
 def _set_auth():
-    global token, session, cookies, cookie_index
+    global token, session, cookie_index
     try:
-        # Set the current cookie for the session
+        # Set the current cookie
         session.cookies['.ROBLOSECURITY'] = cookies[cookie_index]
+
         conn = session.post("https://auth.roblox.com/v2/logout")
         if conn.headers.get("x-csrf-token"):
             token = conn.headers["x-csrf-token"]
     except Exception as e:
-        print(f"Auth error: {e}")
+        print(f"Error in setting auth: {e}")
         time.sleep(5)
         return _set_auth()
 
@@ -81,7 +75,8 @@ def buy_item(product_id, seller_id, price):
         data = conn.json()
         if conn.status_code == 200:
             print("Bought")
-        # Purchase happens only once, so no retry logic is needed
+        else:
+            print(f"Failed to buy: {data}")
     except Exception as e:
         print(f"Error buying item: {e}")
 
@@ -94,7 +89,7 @@ def watcher():
                 "cache-control": "no-cache",
                 "pragma": "no-cache",
             }
-            conn = session.post("https://catalog.roblox.com/v1/catalog/items/details", json={"items": payload}, headers=headers, verify=False)
+            conn = session.post("https://catalog.roblox.com/v1/catalog/items/details", json={ "items": payload }, headers=headers, verify=False)
 
             data = conn.json()
             if conn.status_code == 200:
@@ -104,7 +99,7 @@ def watcher():
                         item_id = item['id']
                         item_name = item['name']
 
-                        if "price" in item and item_id not in cache:
+                        if "price" in item and not item_id in cache:
                             purchase_price = item_ids.get(str(item_id))
                             if purchase_price is not None:
                                 if item["price"] <= purchase_price:
@@ -113,12 +108,15 @@ def watcher():
                                     price = item["price"]
                                     buy_item(r_data["id"], r_data["creator"], price)
             elif conn.status_code == 403:
-                # Switch to the next cookie
-                cookie_index = (cookie_index + 1) % len(cookies)  # Cycle through cookies
                 _set_auth()
+            else:
+                print(f"Error in watcher response: {data}")
+
+            # Rotate cookie index
+            cookie_index = (cookie_index + 1) % len(cookies)
         except Exception as error:
             print(f"Error in watcher: {error}")
-        time.sleep(settings["watch_speed"])
+        time.sleep(watch_speed)
 
 if __name__ == '__main__':
     threading.Thread(target=refresh_tokens).start()
