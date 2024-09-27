@@ -7,11 +7,12 @@ init()
 # Load configuration settings from settings.json
 settings = json.load(open("settings.json", "r"))
 item_ids = settings["items"]  # Extract item IDs and prices
-
+cookies = settings["cookie"]
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
 session = requests.session()
-session.cookies['.ROBLOSECURITY'] = settings["cookie"]
+for s in cookies:
+    session.cookies['.ROBLOSECURITY'] = s
 
 token = None
 payload = [{ "itemType": "Asset", "id": id } for id in item_ids]
