@@ -1,12 +1,12 @@
-import requests, json, time, threading, random, os
+import requests, json, time, threading, os
 from urllib3.exceptions import InsecureRequestWarning
-from colorama import Fore, Back, Style, init
+from colorama import Fore, Style, init
 
 init()
 
 # Load configuration settings from settings.json
 settings = json.load(open("settings.json", "r"))
-item_ids = settings["items"]  # Extract item IDs and prices
+item_ids = settings["items"]  # Extract GamePass IDs and prices
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
@@ -35,7 +35,7 @@ def _set_auth():
     global token, session
     try:
         conn = session.post("https://auth.roblox.com/v2/logout")
-                if conn.headers.get("x-csrf-token"):
+        if conn.headers.get("x-csrf-token"):
             token = conn.headers["x-csrf-token"]
     except:
         time.sleep(5)
