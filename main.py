@@ -11,7 +11,8 @@ cookie = settings["cookies"]
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
 session = requests.session()
-session.cookies['.ROBLOSECURITY'] = [s for s in cookie]
+for s in cookie:
+    session.cookies['.ROBLOSECURITY'] = s
 
 token = None
 payload = [{ "itemType": "Asset", "id": id } for id in item_ids]
