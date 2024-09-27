@@ -1,4 +1,9 @@
-import requests, json, time, threading, random, os
+import requests
+import json
+import time
+import threading
+import random
+import os
 from urllib3.exceptions import InsecureRequestWarning
 from colorama import Fore, Back, Style, init
 
@@ -7,14 +12,13 @@ init()
 # Load configuration settings from settings.json
 settings = json.load(open("settings.json", "r"))
 item_ids = settings["items"]  # Extract item IDs and prices
-cookies = settings["cookie"]
+cookies = settings["cookies"]  # Change to cookies as a list
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
 session = requests.session()
-session.cookies['.ROBLOSECURITY'] = [s for s in cookies]
-
+cookie_index = 0  # Initialize the cookie index
 token = None
-payload = [{ "itemType": "Asset", "id": id } for id in item_ids]
+payload = [{"itemType": "Asset", "id": id} for id in item_ids]
 cache = []
 
 logs = []
@@ -31,12 +35,15 @@ def refresh_tokens():
         time.sleep(150)
 
 def _set_auth():
-    global token, session
+    global token, session, cookies, cookie_index
     try:
+        # Set the current cookie for the session
+        session.cookies['.ROBLOSECURITY'] = cookies[cookie_index]
         conn = session.post("https://auth.roblox.com/v2/logout")
         if conn.headers.get("x-csrf-token"):
             token = conn.headers["x-csrf-token"]
-    except:
+    except Exception as e:
+        print(f"Auth error: {e}")
         time.sleep(5)
         return _set_auth()
 
@@ -53,7 +60,8 @@ def get_product_id(id):
         else:
             time.sleep(1)
             return get_product_id(id)
-    except:
+    except Exception as e:
+        print(f"Error getting product ID: {e}")
         time.sleep(1)
         return get_product_id(id)
 
@@ -74,11 +82,11 @@ def buy_item(product_id, seller_id, price):
         if conn.status_code == 200:
             print("Bought")
         # Purchase happens only once, so no retry logic is needed
-    except:
-        pass  # Ignore errors, do not retry buying
+    except Exception as e:
+        print(f"Error buying item: {e}")
 
 def watcher():
-    global token, session, checks, logs
+    global token, session, checks, logs, cookie_index
     while True:
         try:
             headers = {
@@ -86,7 +94,7 @@ def watcher():
                 "cache-control": "no-cache",
                 "pragma": "no-cache",
             }
-            conn = session.post("https://catalog.roblox.com/v1/catalog/items/details", json={ "items": payload }, headers=headers, verify=False)
+            conn = session.post("https://catalog.roblox.com/v1/catalog/items/details", json={"items": payload}, headers=headers, verify=False)
 
             data = conn.json()
             if conn.status_code == 200:
@@ -96,7 +104,7 @@ def watcher():
                         item_id = item['id']
                         item_name = item['name']
 
-                        if "price" in item and not item_id in cache:
+                        if "price" in item and item_id not in cache:
                             purchase_price = item_ids.get(str(item_id))
                             if purchase_price is not None:
                                 if item["price"] <= purchase_price:
@@ -105,13 +113,15 @@ def watcher():
                                     price = item["price"]
                                     buy_item(r_data["id"], r_data["creator"], price)
             elif conn.status_code == 403:
+                # Switch to the next cookie
+                cookie_index = (cookie_index + 1) % len(cookies)  # Cycle through cookies
                 _set_auth()
         except Exception as error:
-            pass
+            print(f"Error in watcher: {error}")
         time.sleep(settings["watch_speed"])
 
 if __name__ == '__main__':
     threading.Thread(target=refresh_tokens).start()
-    while token == None:
+    while token is None:
         time.sleep(1)
     threading.Thread(target=watcher).start()
