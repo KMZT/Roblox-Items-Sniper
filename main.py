@@ -89,7 +89,7 @@ def watcher():
                 "cache-control": "no-cache",
                 "pragma": "no-cache",
             }
-            conn = session.post("https://catalog.roblox.com/v1/catalog/items/details", json={ "items": payload }, headers=headers, verify=False)
+            conn = session.post(f"https://economy.roblox.com/v1/assets/{item_id}/resellers").json()["data"][0]
 
             data = conn.json()
             if conn.status_code == 200:
