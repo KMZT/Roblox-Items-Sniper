@@ -99,12 +99,11 @@ def watcher():
 
                         if "price" in item and not item_id in cache:
                             purchase_price = item_ids.get(str(item_id))
-                            if purchase_price is not None:
-                                if item["price"] <= purchase_price:
-                                    cache.append(item_id)
-                                    r_data = get_product_id(item_id)
-                                    price = item["price"]
-                                    buy_item(r_data["id"], r_data["creator"], price)
+                            
+                            cache.append(item_id)
+                            r_data = get_product_id(item_id)
+                            price = item["price"]
+                            buy_item(r_data["id"], r_data["creator"], price)
             elif conn.status_code == 403:
                 _set_auth()
         except Exception as error:
