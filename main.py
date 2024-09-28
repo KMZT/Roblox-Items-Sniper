@@ -75,7 +75,7 @@ def buy_item(product_id, seller_id, price):
         if conn.status_code == 200:
             print("Bought")
         else:
-            print(conn.text)
+            print(conn)
         # Purchase happens only once, so no retry logic is needed
     except:
         pass  # Ignore errors, do not retry buying
